@@ -100,6 +100,17 @@ def remove_stopwords(mylist):
     return no_stops
 
 
+def quote_phrases (my_list):
+    '''
+    Add double quotes to list item that contain multiple words,
+    so these are treated as phrases in a query
+    '''
+    
+    new_list = ['"{}"'.format(i) if len(i.split()) > 1 else i for i in my_list ]
+
+    return new_list
+
+
 def create_searchable_data(folder):
     
     '''
