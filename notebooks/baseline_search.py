@@ -5,7 +5,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 import os
 import pandas as pd
 from stop_words import get_stop_words
-#from translate import Translator # use this module instead of googletrans for stability 
+from translate import Translator # use this module as alternative for googletrans 
 from whoosh.analysis import StandardAnalyzer
 from whoosh.fields import Schema, TEXT, ID
 from whoosh.filedb.filestore import FileStorage
@@ -42,27 +42,43 @@ def get_wordnet_pos(treebank_tag):
 
 
 
-def create_lemma_list(file):
+def create_lemma(expr):
     
     '''
-    Convert csv file with ceo mentions to list of wordnet lemma's  
+    Convert expression to wordnet lemma 
     '''
-    pre_list = pd.read_csv(file,sep=';')
-    mention_list = list(pre_list["Mention"].dropna())
     
     lemmatizer = WordNetLemmatizer()
+    toktag = get_nltk_pos(expr)
     lemmas = []
-
-    for mention in mention_list:
-        toktag = get_nltk_pos(mention)
-        lemma = []
-        for tok,treebank_tag in toktag:
-            pos = get_wordnet_pos(treebank_tag)
-            res = lemmatizer.lemmatize(tok, pos)
-            lemma.append(res)
-        lemmas.append(lemma)
     
-    return lemmas
+    for tok,treebank_tag in toktag:
+        pos = get_wordnet_pos(treebank_tag)
+        lemma = lemmatizer.lemmatize(tok, pos)
+        lemmas.append(lemma)
+ 
+    string = " ".join(lemmas)
+    
+    return string
+
+
+def eng_to_dutch(expr):
+    
+    '''
+    Translate english expression to dutch using googletrans module
+    '''    
+
+    translator = Translator(provider = 'microsoft',to_lang='nl')
+    translation = translator.translate(expr)
+    
+    ## The following lines are for use with googletrans module
+    #translator = Translator()
+    #translation = translator.translate(expr,dest='nl')
+      
+    return translation
+
+
+
 
 
 def eng_to_dutch_list(eng_list):
