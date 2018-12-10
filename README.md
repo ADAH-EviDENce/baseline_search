@@ -21,7 +21,8 @@ git clone https://github.com/ADAH-EviDENce/baseline_search.git
 cd baseline_search 
 jupyter notebook
 ```
-Browse to: http://localhost:8088/api/candYgene/queries and you should get a local copy of the notebook containing the baseline_search engine.
+Browse to: ```http://localhost:8888/notebooks/notebooks/EviDENce_baseline_search_engine.ipynb''' 
+and you should get a local copy of the notebook containing the baseline_search engine.
 
 
 ## Features
