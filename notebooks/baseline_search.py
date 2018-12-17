@@ -128,8 +128,43 @@ def quote_phrase (term):
 
     return new_term
 
-
 def create_searchable_data(folder):
+    
+    '''
+    Create index for documents in a (NB: double nested) directory
+    Schema definition: title(name of file), path(as ID), content(indexed
+    but not stored),textdata (stored text content)
+    
+    '''
+    schema = Schema(title=TEXT(stored=True),path=ID(stored=True),\
+              content=TEXT,textdata=TEXT(stored=True)) 
+    indexdir = os.path.join(os.sep,folder,"indexdir")
+    if not os.path.exists(indexdir):
+        os.mkdir(indexdir)
+
+    #ix = create_in(indexdir,schema)    
+    storage = FileStorage(indexdir)    
+    ix = storage.create_index(schema)
+    # Create an index writer to add documents as per schema 
+    # Use Async instead of regular writer to prevent fail due to locking
+    writer = AsyncWriter(ix)
+
+    for file in os.listdir(folder):
+        fpath = os.path.join(folder,file)
+        if os.path.isfile(fpath):
+            title,ext = os.path.splitext(file)
+            fp = open(fpath, 'r')
+            text = fp.read()
+            writer.add_document(title = title,path=fpath,content=text,textdata=text)
+            fp.close()
+        else:
+            pass
+    writer.commit()  
+
+
+
+
+def create_searchable_data2(folder):
     
     '''
     Create index for documents in a (NB: double nested) directory
@@ -168,3 +203,5 @@ def create_searchable_data(folder):
             pass
     writer.commit()   
  
+
+
