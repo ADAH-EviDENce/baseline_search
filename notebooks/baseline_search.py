@@ -4,6 +4,7 @@ from nltk.corpus import wordnet
 from nltk.stem.wordnet import WordNetLemmatizer
 import os
 import pandas as pd
+import shutil
 from stop_words import get_stop_words
 from translate import Translator # use this module as alternative for googletrans 
 from whoosh.analysis import StandardAnalyzer
@@ -78,9 +79,6 @@ def eng_to_dutch(expr):
     return translation
 
 
-
-
-
 def eng_to_dutch_list(eng_list):
     
     '''
@@ -131,7 +129,7 @@ def quote_phrase (term):
 def create_searchable_data(folder):
     
     '''
-    Create index for documents in a (NB: double nested) directory
+    Create index for documents in a given directory 
     Schema definition: title(name of file), path(as ID), content(indexed
     but not stored),textdata (stored text content)
     
@@ -160,8 +158,6 @@ def create_searchable_data(folder):
         else:
             pass
     writer.commit()  
-
-
 
 
 def create_searchable_data2(folder):
@@ -204,4 +200,28 @@ def create_searchable_data2(folder):
     writer.commit()   
  
 
+ 
 
+def copy_fragments (file,source,dest):
+    
+    '''
+    For every textfragment mentioned in the csv file for manual annotation copy the corresponding lemma-based fragment from the  
+    corpus folder into a separate folder. The automatic analyses, i.e., keyword search and machine learning, can be performed on 
+    the fragments in that folder
+    '''
+    
+    # Collect titles in csv file NB these are files with text and not lemmas
+    file_df = pd.read_csv(file, sep=',', encoding = "ISO-8859-1").dropna(how='all')
+    
+    delimiter = '_clipped'
+    
+    for title in file_df['Titel'].iloc[:-1].tolist():
+        # Recreate folder name from file title
+        fol,rest = title.split(delimiter)
+        fol = fol + delimiter
+        # Adapt title to point to lemma -and not text-file
+        file = title.replace("text","lemma.txt")
+        srcpath = os.path.join(os.sep,source,fol,file)
+        destpath = os.path.join(os.sep,dest)
+        # Copy file to destination folder
+        shutil.copy(srcpath, destpath)
