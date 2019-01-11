@@ -200,8 +200,8 @@ def create_searchable_data2(folder):
     writer.commit()   
  
 
- 
 
+ 
 def copy_fragments (file,source,dest):
     
     '''
