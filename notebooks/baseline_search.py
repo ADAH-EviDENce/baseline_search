@@ -1,3 +1,12 @@
+""" 
+Main functions for EviDENce baseline search,
+i.e., search engine for performing keyword search on the EviDENce text corpus
+
+author: Martine de Vos
+email: mgdevos@gmail.com
+"""
+
+from collections import defaultdict
 from googletrans import Translator 
 import nltk
 from nltk.corpus import wordnet
@@ -7,6 +16,9 @@ import pandas as pd
 import shutil
 from stop_words import get_stop_words
 from translate import Translator # use this module as alternative for googletrans 
+
+from whoosh import scoring
+from whoosh import qparser
 from whoosh.analysis import StandardAnalyzer
 from whoosh.fields import Schema, TEXT, ID
 from whoosh.filedb.filestore import FileStorage
@@ -126,6 +138,7 @@ def quote_phrase (term):
 
     return new_term
 
+
 def create_searchable_data(folder):
     
     '''
@@ -199,6 +212,41 @@ def create_searchable_data2(folder):
             pass
     writer.commit()   
  
+
+
+ 
+def search_corpus(indexdir,query):
+    """
+    Given an indexdir and a query, perform search on the corresponding corpus
+    NB OR group, TF-IDF scoring 
+    Returns a pandas dataframe
+    """
+    
+    ix = open_dir(indexdir)
+
+    parser = qparser.QueryParser("content", schema=ix.schema,group=qparser.OrGroup)
+    my_query = parser.parse(query)
+
+    cols_list = []
+    titles_list = []
+
+    with ix.searcher(weighting=scoring.TF_IDF()) as searcher:
+        results = searcher.search(my_query,limit=None, terms = True)
+        for res in results:
+            titles_list.append(res["title"])
+            col_dict = defaultdict(int)
+            hits = [term.decode('utf8')  for where,term in res.matched_terms()]
+            for hit in hits:
+                col_dict[hit]+= 1
+            cols_list.append(col_dict)
+
+    results_df = pd.DataFrame(cols_list)
+    results_df.set_index([titles_list], inplace=True)
+    
+    return results_df
+
+
+
 
 
  
