@@ -215,7 +215,7 @@ def create_searchable_data2(folder):
 
 
  
-def search_corpus(indexdir,query):
+def search_corpus(indexdir,keywords):
     """
     Given an indexdir and a query, perform search on the corresponding corpus
     NB OR group, TF-IDF scoring 
@@ -225,7 +225,7 @@ def search_corpus(indexdir,query):
     ix = open_dir(indexdir)
 
     parser = qparser.QueryParser("content", schema=ix.schema,group=qparser.OrGroup)
-    my_query = parser.parse(query)
+    my_query = parser.parse(",".join(keywords))
 
     cols_list = []
     titles_list = []
@@ -243,7 +243,22 @@ def search_corpus(indexdir,query):
     results_df = pd.DataFrame(cols_list)
     results_df.set_index([titles_list], inplace=True)
     
-    return results_df
+    #Create a dataframe for all docs and keywords with empty values
+    keywords_dic = {term:0 for term in keywords}
+    list_docs = [doc['title'] for doc in ix.searcher().documents()] 
+
+    all_df = pd.DataFrame(keywords_dic, index = list_docs)
+
+    # Create a dataframe for all docs and keywords with search results
+    merged_df = results_df.combine_first(all_df)
+    
+    # Apparently phrase queries are still broken up in separate search terms
+    # this is shown by the surplus in columns in merged_df
+    surplus = [col for col in merged_df if col not in all_df]
+    # Remove these for now as a workaround; phrase queries should be fixed
+    merged_df = merged_df.drop(columns = surplus)
+    
+    return merged_df
 
 
 
