@@ -241,7 +241,7 @@ def search_corpus(indexdir,keywords):
                 col_dict[hit]+= 1
             cols_list.append(col_dict)
 
-    results_df = pd.DataFrame(cols_list)
+    results_df = pd.DataFrame(cols_list).fillna(0)   
     results_df.set_index([titles_list], inplace=True)
     
     #Create a dataframe for all docs and keywords with empty values
@@ -262,7 +262,7 @@ def search_corpus(indexdir,keywords):
     search_report(ix, results_df, keywords)
     plot_search_results(merged_df)
     
-    return merged_df
+    return results_df, merged_df
 
 
 
