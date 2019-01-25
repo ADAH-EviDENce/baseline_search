@@ -8,6 +8,7 @@ email: mgdevos@gmail.com
 
 from collections import defaultdict
 from googletrans import Translator 
+import matplotlib.pyplot as plt
 import nltk
 from nltk.corpus import wordnet
 from nltk.stem.wordnet import WordNetLemmatizer
@@ -216,11 +217,11 @@ def create_searchable_data2(folder):
 
  
 def search_corpus(indexdir,keywords):
-    """
+    '''
     Given an indexdir and a query, perform search on the corresponding corpus
     NB OR group, TF-IDF scoring 
     Returns a pandas dataframe
-    """
+    '''
     
     ix = open_dir(indexdir)
 
@@ -247,9 +248,8 @@ def search_corpus(indexdir,keywords):
     keywords_dic = {term:0 for term in keywords}
     list_docs = [doc['title'] for doc in ix.searcher().documents()] 
 
-    all_df = pd.DataFrame(keywords_dic, index = list_docs)
-
     # Create a dataframe for all docs and keywords with search results
+    all_df = pd.DataFrame(keywords_dic, index = list_docs)
     merged_df = results_df.combine_first(all_df)
     
     # Apparently phrase queries are still broken up in separate search terms
@@ -258,13 +258,74 @@ def search_corpus(indexdir,keywords):
     # Remove these for now as a workaround; phrase queries should be fixed
     merged_df = merged_df.drop(columns = surplus)
     
+    # write results
+    search_report(ix, results_df, keywords)
+    plot_search_results(merged_df)
+    
     return merged_df
 
 
 
+def search_report(index_object,results_df,keywords):
+    '''
+    Write metadata and results on performed search
+    '''
+         
+    all_docs = index_object.searcher().documents() 
+    summed_docs = sum(1 for x in all_docs)
+    summed_results =len(results_df.index)
+    
+    percent_hits = (summed_results/summed_docs)*100
+    percent_keywords = (len(results_df.columns)/len(keywords))*100
 
+    print("Original corpus size: %s "%summed_docs)
+    print("Percentage documents with at least one keyword: %s "%percent_hits)
+    print("Total number of keywords used in query: %s "%len(keywords))
+    print("Percentage keywords found wrt to those used in query: %s \n"%percent_keywords)
+    
 
- 
+    
+def plot_search_results(merged_df):
+    '''
+    Plot results on performed search
+    '''
+    # Hits per document
+    sum_docs = pd.Series(merged_df.sum(axis=1)).value_counts(sort=True)
+    sum_docs = sum_docs.sort_index()
+    
+    # Hits per keyword
+    sum_keywords = pd.Series(merged_df.sum().iloc[:-1])
+    sum_keywords = sum_keywords.sort_values(ascending=True)
+    
+    
+    fig, axes = plt.subplots(nrows=1,ncols=2,squeeze=False)
+    
+    sum_docs.plot(kind='bar',ax=axes[0,0])
+    sum_keywords.iloc[-20:-1].plot(kind='barh', figsize = (10,6),ax=axes[0,1])
+
+    
+def ceo_classes(ceo_df, merged_df):
+    
+    # Create dictionary of ceo classes; categorize keywords into these classes
+    ceo_class_df = pd.DataFrame(data =ceo_df[['CEO class','Dutch']]).drop_duplicates(subset= 'Dutch')
+    ceo_class_df = ceo_class_df.drop(columns=['Dutch']).set_index(ceo_class_df['Dutch'])
+    ceo_class_dict = ceo_class_df.transpose().to_dict(orient = 'records')[0]
+    
+    sum_keywords = pd.Series(merged_df.sum().iloc[:-1])
+    ceo_sum_keywords = [ceo_class_dict[i] for i in sum_keywords.index]
+    serie = pd.Series(sum_keywords.values, index=ceo_sum_keywords)
+    
+    # Plot distribution of keywords over classes
+    res = serie.groupby(serie.index).sum()
+    res = res.drop(labels=['\P','/M','/B']).sort_values()
+
+    p4 = res.iloc[-20:-1].plot(kind='barh', figsize = (10,6))
+    p4.set_title('Figure 4: Distribution of classes of most frequent keywords in search results')
+
+   # p4.get_figure().savefig(os.path.join(report,"Freq_keywords_classes.png"))   
+
+    
+    
 def copy_fragments (file,source,dest):
     
     '''
