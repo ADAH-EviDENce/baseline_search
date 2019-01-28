@@ -132,6 +132,7 @@ def quote_phrase (term):
     Add double quotes to term that contains multiple words,
     so this is treated as a phrase in a query
     '''
+      
     if len(term.split()) > 1:
         new_term ='"{}"'.format(term) 
     else:
@@ -226,8 +227,10 @@ def search_corpus(indexdir,keywords):
     ix = open_dir(indexdir)
 
     parser = qparser.QueryParser("content", schema=ix.schema,group=qparser.OrGroup)
+    # Add quotes in case of multiple words to enable 'phrase queries'.
+    keywords = [quote_phrase(x) for x in keywords]
     my_query = parser.parse(",".join(keywords))
-
+    
     cols_list = []
     titles_list = []
 
@@ -300,8 +303,8 @@ def plot_search_results(merged_df):
     
     fig, axes = plt.subplots(nrows=1,ncols=2,squeeze=False)
     
-    sum_docs.plot(kind='bar',ax=axes[0,0])
-    sum_keywords.iloc[-20:-1].plot(kind='barh', figsize = (10,6),ax=axes[0,1])
+    sum_docs.plot(kind='bar',ax=axes[0,0],title ='hits per document')
+    sum_keywords.iloc[-20:-1].plot(kind='barh', figsize = (10,6),ax=axes[0,1], title ='hits for most frq keywords')
 
     
 def ceo_classes(ceo_df, merged_df):
